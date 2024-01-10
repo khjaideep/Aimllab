@@ -1,0 +1,500 @@
+LAB 1
+
+class Graph:
+    def __init__(self, adjac_lis):
+        self.adjac_lis = adjac_lis
+
+    def get_neighbours(self, v):
+        return self.adjac_lis[v]
+
+    def h(self, n):
+        H = {'A': 1, 'B': 1, 'C': 1, 'D': 1}
+        return H[n]
+
+    def a_star_algorithm(self, start, stop):
+        open_lst = set([start])
+        closed_lst = set()
+        dist = {start: 0}
+        prenode = {start: start}
+
+        while open_lst:
+            n = min(open_lst, key=lambda x: dist[x] + self.h(x))
+
+            if n == stop:
+                reconst_path = []
+                while prenode[n] != n:
+                    reconst_path.append(n)
+                    n = prenode[n]
+                reconst_path.append(start)
+                reconst_path.reverse()
+                print("Path found:", reconst_path)
+                return reconst_path
+
+            open_lst.remove(n)
+            closed_lst.add(n)
+
+            for m, weight in self.get_neighbours(n):
+                if m in closed_lst:
+                    continue
+                if m not in open_lst or dist[n] + weight < dist[m]:
+                    open_lst.add(m)
+                    prenode[m] = n
+                    dist[m] = dist[n] + weight
+
+        print("Path does not exist")
+        return None
+
+
+adjac_lis = {'A': [('B', 1), ('C', 3), ('D', 7)], 'B': [('D', 5)], 'C': [('D', 12)]}
+graph1 = Graph(adjac_lis)
+graph1.a_star_algorithm('A', 'D')
+
+
+
+
+Lab2
+
+class Graph:
+    def __init__(self, graph, heuristicNodeList, startNode): #instantiate graph object with graph topology, heuristic values, start node
+
+        self.graph = graph
+        self.H=heuristicNodeList
+        self.start=startNode
+        self.parent={}
+        self.status={}
+        self.solutionGraph={}
+
+    def applyAOStar(self): # starts a recursive AO* algorithm
+        self.aoStar(self.start, False)
+
+    def getNeighbors(self, v): # gets the Neighbors of a given node
+        return self.graph.get(v,'')
+
+    def getStatus(self,v): # return the status of a given node
+        return self.status.get(v,0)
+
+    def setStatus(self,v, val): # set the status of a given node
+        self.status[v]=val
+
+    def getHeuristicNodeValue(self, n):
+        return self.H.get(n,0) # always return the heuristic value of a given node
+
+    def setHeuristicNodeValue(self, n, value):
+        self.H[n]=value # set the revised heuristic value of a given node
+
+
+    def printSolution(self):
+        print("FOR GRAPH SOLUTION, TRAVERSE THE GRAPH FROM THE STARTNODE:",self.start)
+        print("------------------------------------------------------------")
+        print(self.solutionGraph)
+        print("------------------------------------------------------------")
+
+    def computeMinimumCostChildNodes(self, v): # Computes the Minimum Cost of child nodes of a given node v
+        minimumCost=0
+        costToChildNodeListDict={}
+        costToChildNodeListDict[minimumCost]=[]
+        flag=True
+        for nodeInfoTupleList in self.getNeighbors(v): # iterate over all the set of child node/s
+            cost=0
+            nodeList=[]
+            for c, weight in nodeInfoTupleList:
+                cost=cost+self.getHeuristicNodeValue(c)+weight
+                nodeList.append(c)
+        
+            if flag==True: # initialize Minimum Cost with the cost of first set of child node/s
+                minimumCost=cost
+                costToChildNodeListDict[minimumCost]=nodeList # set the Minimum Cost child node/s
+                flag=False
+            else: # checking the Minimum Cost nodes with the current Minimum Cost
+                if minimumCost>cost:
+                    minimumCost=cost
+                    costToChildNodeListDict[minimumCost]=nodeList # set the Minimum Cost child node/s
+
+
+        return minimumCost, costToChildNodeListDict[minimumCost] # return Minimum Cost and Minimum Cost child node/s
+
+
+    def aoStar(self, v, backTracking): # AO* algorithm for a start node and backTracking status flag
+
+        print("HEURISTIC VALUES :", self.H)
+        print("SOLUTION GRAPH :", self.solutionGraph)
+        print("PROCESSING NODE :", v)
+
+        print("-----------------------------------------------------------------------------------------")
+    
+        if self.getStatus(v) >= 0: # if status node v >= 0, compute Minimum Cost nodes of v
+            minimumCost, childNodeList = self.computeMinimumCostChildNodes(v)
+            self.setHeuristicNodeValue(v, minimumCost)
+            self.setStatus(v,len(childNodeList))
+
+            solved=True # check the Minimum Cost nodes of v are solved
+        
+            for childNode in childNodeList:
+                self.parent[childNode]=v
+                if self.getStatus(childNode)!=-1:
+                    solved=solved & False
+
+            if solved==True: # if the Minimum Cost nodes of v are solved, set the current node status as solved(-1)
+                self.setStatus(v,-1)
+                self.solutionGraph[v]=childNodeList # update the solution graph with the solved nodes which may be a part of solution
+
+
+            if v!=self.start: # check the current node is the start node for backtracking the current node value
+                self.aoStar(self.parent[v], True) # backtracking the current node value with backtracking status set to true
+
+            if backTracking==False: # check the current call is not for backtracking
+                for childNode in childNodeList: # for each Minimum Cost child node
+                    self.setStatus(childNode,0) # set the status of child node to 0(needs exploration)
+                    self.aoStar(childNode, False) # Minimum Cost child node is further explored with backtracking status as false
+
+
+
+h1 = {'A': 1, 'B': 6, 'C': 2, 'D': 12, 'E': 2, 'F': 1, 'G': 5, 'H': 7, 'I': 7, 'J':1, 'T': 3}
+graph1 = {
+    'A': [[('B', 1), ('C', 1)], [('D', 1)]],
+    'B': [[('G', 1)], [('H', 1)]],
+    'C': [[('J', 1)]],
+    'D': [[('E', 1), ('F', 1)]],
+    'G': [[('I', 1)]]
+}
+G1= Graph(graph1, h1, 'A')
+G1.applyAOStar()
+G1.printSolution()
+
+h2 = {'A': 1, 'B': 6, 'C': 12, 'D': 10, 'E': 4, 'F': 4, 'G': 5, 'H': 7} # Heuristic values of Nodes
+graph2 = { # Graph of Nodes and Edges
+    'A': [[('B', 1), ('C', 1)], [('D', 1)]], # Neighbors of Node 'A', B, C & D with repective weights
+    'B': [[('G', 1)], [('H', 1)]], # Neighbors are included in a list of lists
+    'D': [[('E', 1), ('F', 1)]] # Each sublist indicate a "OR" node or "AND" nodes
+}
+
+G2 = Graph(graph2, h2, 'A') # Instantiate Graph object with graph, heuristic values and start Node
+G2.applyAOStar() # Run the AO* algorithm
+G2.printSolution() # print the solution graph as AO* Algorithm search
+
+
+
+
+Lab3
+
+import csv
+
+with open("CandidateElimination.csv") as f:
+    csv_file = csv.reader(f)
+    data = list(csv_file)
+
+    s = data[1][:-1]
+    g = [['?' for i in range(len(s))] for j in range(len(s))]
+
+    for i in data:
+        if i[-1] == "Yes":
+            for j in range(len(s)):
+                if i[j] != s[j]:
+                    s[j] = '?'
+                    g[j][j] = '?'
+
+        elif i[-1] == "No":
+            for j in range(len(s)):
+                if i[j] != s[j]:
+                    g[j][j] = s[j]
+                else:
+                    g[j][j] = "?"
+        print("\nSteps of Candidate Elimination Algorithm", data.index(i) + 1)
+        print(s)
+        print(g)
+    gh = []
+    for i in g:
+        for j in i:
+            if j != '?':
+                gh.append(i)
+                break
+    print("\nFinal specific hypothesis:\n", s)
+
+    print("\nFinal general hypothesis:\n", gh)
+
+
+sky	airtemp	Humidity	Wind	Water	forecast	Enjoy sport
+Sunny	Warm	Normal	Strong	Warm	Same	Yes
+Sunny	Warm	high	Strong	Warm	Same	Yes
+Rainy	Cold	high	Strong	Warm	Change	No
+Sunny	Warm	high	Strong	Cool	Change	Yes
+
+
+
+Lab 4
+
+import pandas as pd
+import numpy as np
+dataset = pd.read_csv('playtennis1.csv',names=['outlook','temperature','humidity','wind','class'])
+attributes =('Outlook','Temperature','Humidity','Wind','PlayTennis')
+def entropy(target_col):
+    elements,counts = np.unique(target_col,return_counts = True)
+    print("the len is ",counts)
+    total_count = np.sum(counts)
+    entropy = np.sum([(-counts[i]/total_count)*np.log2(counts[i]/total_count) for i in range(len(elements))])
+    return entropy
+def InfoGain(data,split_attribute_name,target_name="class"):
+    total_entropy = entropy(data[target_name])
+    vals,counts= np.unique(data[split_attribute_name],return_counts=True)
+    Weighted_Entropy = np.sum([(counts[i]/np.sum(counts))*entropy(data.where(data[split_attribute_name]==vals[i]).dropna()[target_name]) for i in range(len(vals))])
+    Information_Gain = total_entropy - Weighted_Entropy
+    return Information_Gain
+def ID3(data,originaldata,features,target_attribute_name="class",parent_node_class = None):    
+    if len(np.unique(data[target_attribute_name])) <= 1:
+        return np.unique(data[target_attribute_name])[0]
+    elif len(data)==0:
+        return np.unique(originaldata[target_attribute_name])[np.argmax(np.unique(originaldata[target_attribute_name],return_counts=True)[1])]
+    elif len(features) ==0:
+        return parent_node_class
+    else:
+        parent_node_class = np.unique(data[target_attribute_name])[np.argmax(np.unique(data[target_attribute_name],return_counts=True)[1])]
+        item_values = [InfoGain(data,feature,target_attribute_name) for feature in features] #Return the information gain values for the features in the dataset
+        best_feature_index = np.argmax(item_values)
+        best_feature = features[best_feature_index]
+        tree = {best_feature:{}}
+        features = [i for i in features if i != best_feature]
+        for value in np.unique(data[best_feature]):
+            value = value
+            sub_data = data.where(data[best_feature] == value).dropna()
+            subtree = ID3(sub_data,dataset,features,target_attribute_name,parent_node_class)
+            tree[best_feature][value] = subtree
+        return(tree) 
+
+def train_test_split(dataset):
+    training_data = dataset.iloc[:14].reset_index(drop=True)
+    return training_data  #,testing_data
+
+XX = train_test_split(dataset)
+training_data=XX
+print("training data",training_data)
+tree = ID3(training_data,training_data,training_data.columns[:-1])
+print(' Display Tree',tree)
+print('len=',len(training_data))
+
+
+Outlook	Temperature	Humidity	Windy	PlayTennis
+Sunny	Hot	High	Weak	No
+Sunny	Hot	High	Strong	No
+Overcast	Hot	High	Weak	Yes
+Rain	Mild	High	Weak	Yes
+Rain	Cool	Normal	Weak	Yes
+Rain	Cool	Normal	Strong	No
+Overcast	Cool	Normal	Strong	Yes
+Sunny	Mild	High	Weak	No
+Sunny	Cool	Normal	Weak	Yes
+Rain	Mild	Normal	Weak	Yes
+Sunny	Mild	Normal	Strong	Yes
+Overcast	Mild	High	Strong	Yes
+Overcast	Hot	Normal	Weak	Yes
+Rain	Mild	High	Strong	No
+
+
+
+Lab 5
+
+import numpy as np 
+X = np.array(([2, 9], [1, 5], [3, 6]), dtype=float) 
+y = np.array(([.92], [.86], [.89]), dtype=float) 
+X = X/np.amax(X, axis=0) 
+def sigmoid(x): 
+ return 1 / (1 + np.exp(-x)) 
+def der_sigmoid(x): 
+ return x * (1 - x) 
+epoch = 5000 
+lr = 0.01 
+neurons_i = 2 
+neurons_h = 3 
+neurons_o = 1 
+weight_h = np.random.uniform(size=(neurons_i, neurons_h)) 
+bias_h = np.random.uniform(size=(1, neurons_h)) 
+weight_o = np.random.uniform(size=(neurons_h, neurons_o)) 
+bias_o = np.random.uniform(size=(1, neurons_o)) 
+for i in range(epoch): 
+ inp_h = np.dot(X, weight_h) + bias_h 
+ out_h = sigmoid(inp_h) 
+ inp_o = np.dot(out_h, weight_o) + bias_o 
+ out_o = sigmoid(inp_o) 
+ err_o = y - out_o 
+ grad_o = der_sigmoid(out_o) 
+ delta_o = err_o * grad_o 
+ err_h = delta_o.dot(weight_o.T) 
+ grad_h = der_sigmoid(out_h) 
+ delta_h = err_h * grad_h 
+ weight_o += out_h.T.dot(delta_o) * lr 
+ weight_h += X.T.dot(delta_h) * lr 
+print('Input: ', X) 
+print('Actual: ', y) 
+print('Predicted: ', out_o)
+
+
+Lab 6
+
+      
+ import pandas as pd
+from sklearn import tree
+from sklearn.preprocessing import LabelEncoder
+from sklearn.naive_bayes import GaussianNB
+import warnings
+warnings.filterwarnings("ignore")
+
+# Load Data from CSV
+data = pd.read_csv('tennisdata.csv')
+print("The first 5 Values of data is :\n", data.head())
+
+# obtain train data and train output
+X = data.iloc[:, :-1]
+print("\nThe First 5 values of the train data is\n", X.head())
+
+y = data.iloc[:, -1]
+print("\nThe First 5 values of train output is\n", y.head())
+
+le_outlook = LabelEncoder()
+X.Outlook = le_outlook.fit_transform(X.Outlook)
+
+le_Temperature = LabelEncoder()
+X.Temperature = le_Temperature.fit_transform(X.Temperature)
+
+le_Humidity = LabelEncoder()
+X.Humidity = le_Humidity.fit_transform(X.Humidity)
+
+le_Windy = LabelEncoder()
+X.Windy = le_Windy.fit_transform(X.Windy)
+
+print("\nNow the Train output is\n", X.head())
+
+le_PlayTennis = LabelEncoder()
+y = le_PlayTennis.fit_transform(y)
+print("\nNow the Train output is\n",y)
+
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(X,y, test_size = 0.20)
+
+classifier = GaussianNB()
+classifier.fit(X_train, y_train)
+
+from sklearn.metrics import accuracy_score
+print("Accuracy is:", accuracy_score(classifier.predict(X_test), y_test))
+
+
+Outlook	Temperature	Humidity	Windy	PlayTennis
+Sunny	Hot	High	Weak	No
+Sunny	Hot	High	Strong	No
+Overcast	Hot	High	Weak	Yes
+Rain	Mild	High	Weak	Yes
+Rain	Cool	Normal	Weak	Yes
+Rain	Cool	Normal	Strong	No
+Overcast	Cool	Normal	Strong	Yes
+Sunny	Mild	High	Weak	No
+Sunny	Cool	Normal	Weak	Yes
+Rain	Mild	Normal	Weak	Yes
+Sunny	Mild	Normal	Strong	Yes
+Overcast	Mild	High	Strong	Yes
+Overcast	Hot	Normal	Weak	Yes
+Rain	Mild	High	Strong	No
+
+
+
+
+Lab 7
+
+
+from sklearn.cluster import KMeans
+from sklearn import preprocessing
+from sklearn.mixture import GaussianMixture
+from sklearn.datasets import load_iris
+import sklearn.metrics as sm
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import warnings
+warnings.filterwarnings("ignore")
+
+dataset=load_iris()
+# print(dataset)
+
+X=pd.DataFrame(dataset.data)
+X.columns=['Sepal_Length','Sepal_Width','Petal_Length','Petal_Width']
+y=pd.DataFrame(dataset.target)
+y.columns=['Targets']
+# print(X)
+
+plt.figure(figsize=(14,7))
+colormap=np.array(['red','lime','black'])
+
+# REAL PLOT
+plt.subplot(1,3,1)
+plt.scatter(X.Petal_Length,X.Petal_Width,c=colormap[y.Targets],s=40)
+plt.title('Real')
+
+# K-PLOT
+plt.subplot(1,3,2)
+model=KMeans(n_clusters=3)
+model.fit(X)
+predY=np.choose(model.labels_,[0,1,2]).astype(np.int64)
+plt.scatter(X.Petal_Length,X.Petal_Width,c=colormap[predY],s=40)
+plt.title('KMeans')
+
+# GMM PLOT
+scaler=preprocessing.StandardScaler()
+scaler.fit(X)
+xsa=scaler.transform(X)
+xs=pd.DataFrame(xsa,columns=X.columns)
+gmm=GaussianMixture(n_components=3)
+gmm.fit(xs)
+
+y_cluster_gmm=gmm.predict(xs)
+plt.subplot(1,3,3)
+plt.scatter(X.Petal_Length,X.Petal_Width,c=colormap[y_cluster_gmm],s=40)
+plt.title('GMM Classification')
+
+
+Lab 8
+
+from sklearn.model_selection import train_test_split 
+from sklearn.neighbors import KNeighborsClassifier 
+from sklearn import datasets
+iris=datasets.load_iris() 
+print("Iris Data set loaded...")
+x_train, x_test, y_train, y_test = train_test_split(iris.data,iris.target,test_size=0.1)
+#random_state=0
+for i in range(len(iris.target_names)):
+    print("Label", i , "-",str(iris.target_names[i]))
+classifier = KNeighborsClassifier(n_neighbors=2)
+classifier.fit(x_train, y_train)
+y_pred=classifier.predict(x_test)
+print("Results of Classification using K-nn with K=1 ") 
+for r in range(0,len(x_test)):
+    print(" Sample:", str(x_test[r]), " Actual-label:", str(y_test[r])," Predicted-label:", str(y_pred[r]))
+
+    print("Classification Accuracy :" , classifier.score(x_test,y_test));
+
+
+Lab 9
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+def local_regression(x0, X, Y, tau):
+    x0 = [1, x0]   
+    X = [[1, i] for i in X]
+    X = np.asarray(X)
+    xw = (X.T) * np.exp(np.sum((X - x0) ** 2, axis=1) / (-2 * tau))
+    beta = np.linalg.pinv(xw @ X) @ xw @ Y @ x0  
+    return beta    
+
+def draw(tau):
+    prediction = [local_regression(x0, X, Y, tau) for x0 in domain]
+    plt.plot(X, Y, 'o', color='black')
+    plt.plot(domain, prediction, color='red')
+    plt.show()
+
+X = np.linspace(-3, 3, num=1000)
+domain = X
+Y = np.log(np.abs(X ** 2 - 1) + .5)
+
+draw(10)
+draw(0.1)
+draw(0.01)
+draw(0.001)
+
+   
